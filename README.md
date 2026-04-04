@@ -45,9 +45,6 @@ To run this project, you need:
 
 ## **4\. Step-by-Step Run Guide**
 
-<span style="color: purple;">***RUBRIC NOTE: The grader must be able to copy-paste these commands.***</span>
-
-
 ### **Step 1: Start the Server**
 
 Open your terminal and navigate to the project folder, and then into the src folder. The server binds to 127.0.0.1 on port 5050\.  
@@ -100,8 +97,6 @@ We designed a custom application-layer protocol for data exchange using JSON ove
 
 
 ## **6\. Academic Integrity & References**
-
-<span style="color: purple;">***RUBRIC NOTE: List all references used and help you got. Below is an example.***</span>
 
 * **Code Origin:**  
   * The socket boilerplate was adapted from the course tutorial "TCP Echo Server". The core multithreaded game logic, protocol, and state management were written by the group.  
