@@ -35,11 +35,14 @@ game_over = False
 # UI references (set during build)
 grid_labels = [[None for _ in range(WORD_LENGTH)] for _ in range(MAX_GUESSES)]
 grid_frames = [[None for _ in range(WORD_LENGTH)] for _ in range(MAX_GUESSES)]
+identity_labels = [None for _ in range(MAX_GUESSES)]
 key_buttons = {}
 key_states = {}
 input_var = None
 status_label = None
 entry = None
+my_id_lbl = None
+players_container = None
 
 
 # ─── Network Functions ──────────────────────────────────────────
@@ -89,6 +92,14 @@ def listen_to_server():
                 elif msg["type"] == "NEW_ROUND":
                     handle_new_round(msg)
 
+                # Action: Invalid guess — server rejects
+                elif msg["type"] == "ERROR":
+                    handle_error(msg)
+
+                # Action: List of active players updated
+                elif msg["type"] == "PLAYERS_UPDATE":
+                    handle_players_update(msg)
+
         except (ConnectionResetError, ConnectionAbortedError, OSError):
             root.after(0, lambda: update_status("Connection lost.", "#e06c6c"))
             break
@@ -98,7 +109,12 @@ def listen_to_server():
 
 def handle_welcome(msg):
     """Process WELCOME message: server confirms we joined."""
-    root.after(0, lambda: update_status("Connected! Start guessing.", TILE_CORRECT))
+    identity = msg.get("identity")
+    def set_id():
+        if identity:
+            my_id_lbl.config(text=identity["symbol"], fg=identity["color"])
+        update_status("Connected! Start guessing.", TILE_CORRECT)
+    root.after(0, set_id)
 
 
 def handle_feedback(msg):
@@ -106,14 +122,19 @@ def handle_feedback(msg):
     Process FEEDBACK message: apply color results to the shared board.
     Every client receives this for every guess made by any player.
     Expected payload:
-        {"type": "FEEDBACK", "guess": "CRANE", "feedback": ["correct", "absent", ...]}
+        {"type": "FEEDBACK", "guess": "CRANE", "feedback": ["correct", "absent", ...], "identity": {"symbol": "▲", "color": "#FF0"}}
     """
     guess = msg["guess"].upper()
     feedback = msg["feedback"]
+    identity = msg.get("identity")
     solved = all(f == "correct" for f in feedback)
 
     def apply():
         global current_row, game_over
+        
+        if identity and current_row < MAX_GUESSES:
+            identity_labels[current_row].config(text=identity["symbol"], fg=identity["color"])
+            
         apply_feedback(guess, feedback)
 
         if solved:
@@ -138,6 +159,24 @@ def handle_new_round(msg):
     """Process NEW_ROUND message: reset the board for a new game."""
     root.after(0, reset_game)
     root.after(0, lambda: update_status("New round!", TILE_CORRECT))
+
+
+def handle_error(msg):
+    """Process ERROR message: display error to the user."""
+    message = msg.get("message", "Invalid guess!")
+    root.after(0, lambda: update_status(message, "#e06c6c"))
+
+
+def handle_players_update(msg):
+    """Process PLAYERS_UPDATE message: display connected users."""
+    players = msg.get("players", [])
+    def update_UI():
+        for widget in players_container.winfo_children():
+            widget.destroy()
+        for p in players:
+            lbl = tk.Label(players_container, text=p["symbol"], fg=p["color"], bg=BG_COLOR, font=("Helvetica Neue", 14))
+            lbl.pack(side=tk.LEFT, padx=2)
+    root.after(0, update_UI)
 
 
 # ─── GUI: Board Update Functions ────────────────────────────────
@@ -191,6 +230,7 @@ def reset_game():
     status_label.config(text="", fg="#e06c6c")
 
     for row in range(MAX_GUESSES):
+        identity_labels[row].config(text="  ", fg=BG_COLOR)
         for col in range(WORD_LENGTH):
             grid_labels[row][col].config(text="", bg=BG_COLOR)
             grid_frames[row][col].config(bg=BG_COLOR, highlightbackground=TILE_BORDER)
@@ -221,9 +261,6 @@ def on_key_press(event):
         return
     if event.keysym == "Return":
         submit_guess()
-    elif event.keysym == "BackSpace":
-        current = input_var.get()
-        input_var.set(current[:-1])
 
 
 def on_key_click(key):
@@ -267,6 +304,7 @@ def build_grid(parent):
     for row in range(MAX_GUESSES):
         row_frame = tk.Frame(parent, bg=BG_COLOR)
         row_frame.pack(pady=2)
+        
         for col in range(WORD_LENGTH):
             cell_frame = tk.Frame(
                 row_frame, width=56, height=56, bg=BG_COLOR,
@@ -284,10 +322,15 @@ def build_grid(parent):
             grid_frames[row][col] = cell_frame
             grid_labels[row][col] = label
 
+        # Pack identity label on the right side to prevent word shifting
+        id_lbl = tk.Label(row_frame, text="  ", font=("Helvetica Neue", 16), bg=BG_COLOR, width=2)
+        id_lbl.pack(side=tk.LEFT, padx=(10, 0))
+        identity_labels[row] = id_lbl
+
 
 def build_input(parent):
     """Construct the text input field and submit button."""
-    global input_var, entry, status_label
+    global input_var, entry, status_label, my_id_lbl
 
     input_var = tk.StringVar()
     input_var.trace_add("write", on_input_change)
@@ -320,6 +363,9 @@ def build_input(parent):
         command=submit_guess
     )
     submit_btn.pack(side=tk.LEFT)
+
+    my_id_lbl = tk.Label(entry_frame, text="  ", font=("Helvetica Neue", 16), bg=BG_COLOR, width=2)
+    my_id_lbl.pack(side=tk.LEFT, padx=(10, 0))
 
     status_label = tk.Label(
         parent, text="Connecting to server...",
@@ -375,6 +421,17 @@ def build_ui():
     input_frame = tk.Frame(main_frame, bg=BG_COLOR)
     input_frame.pack(pady=(0, 10))
     build_input(input_frame)
+
+    # Players connected area
+    global players_container
+    players_frame = tk.Frame(main_frame, bg=BG_COLOR)
+    players_frame.pack(pady=(15, 0))
+    
+    players_label = tk.Label(players_frame, text="Players: ", font=("Helvetica Neue", 12), fg="#808080", bg=BG_COLOR)
+    players_label.pack(side=tk.LEFT)
+    
+    players_container = tk.Frame(players_frame, bg=BG_COLOR)
+    players_container.pack(side=tk.LEFT)
 
     root.bind("<Key>", on_key_press)
 
