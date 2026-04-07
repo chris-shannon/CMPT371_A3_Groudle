@@ -8,7 +8,8 @@
 ## **Group Members**
 
 | Name | Student ID | Email |
-| Christopher Shannon | 301540245| csa155@sfu.ca |
+| --- | --- | --- |
+| Christopher Shannon | 301540245 | csa155@sfu.ca |
 | Mark Danskin | 301604373 | mdd16@sfu.ca |
 
 ## **1\. Project Overview & Description**
