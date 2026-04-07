@@ -374,31 +374,6 @@ def build_input(parent):
     status_label.pack(pady=(5, 0))
 
 
-def build_keyboard(parent):
-    """Construct the on-screen keyboard."""
-    rows = [
-        list("QWERTYUIOP"),
-        list("ASDFGHJKL"),
-        list("ZXCVBNM")
-    ]
-    for row_keys in rows:
-        row_frame = tk.Frame(parent, bg=BG_COLOR)
-        row_frame.pack(pady=2)
-        for key in row_keys:
-            btn = tk.Button(
-                row_frame, text=key,
-                font=("Helvetica Neue", 12, "bold"),
-                fg="#000000", bg=KEY_BG,
-                activebackground="#9a9a9c", activeforeground="#000000",
-                highlightbackground=KEY_BG,
-                width=3, height=2,
-                command=lambda k=key: on_key_click(k)
-            )
-            btn.pack(side=tk.LEFT, padx=2)
-            key_buttons[key] = btn
-            key_states[key] = None
-
-
 def build_ui():
     """Assemble the complete GUI layout."""
     main_frame = tk.Frame(root, bg=BG_COLOR)
