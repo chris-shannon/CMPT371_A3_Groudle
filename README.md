@@ -14,7 +14,7 @@
 
 ## **1\. Project Overview & Description**
 
-This project is a cooperative multiplayer version of the popular Wordle game using Python's Socket API (TCP). It allows up to 16 players to all play the game simultaneously, making their own guesses for the same word, with identification symbols used to show which users made which guess. The server handles the game logic, the word lists, the guesses made so far, and win conditions. The game will automatically reset after a short timeout when 6 guesses have been made, or the word was guessed correctly.
+This project is a cooperative multiplayer version of the popular Wordle game using Python's Socket API (TCP). It allows up to 16 players to all play the game simultaneously, making their own guesses for the same word, with identification symbols used to show which users made which guess. The server handles the game logic, the word lists, the guesses made so far, and win conditions. The client sends guesses to the server and receives immediate feedback both for its own guesses and other players connected to the server. The game will automatically reset after a short timeout when 6 guesses have been made, or the word was guessed correctly.
 
 ## **2\. System Limitations & Edge Cases**
 
@@ -27,6 +27,7 @@ As required by the project specifications, we have identified and handled (or de
   * <span style="color: green;">*Solution:*</span> Since TCP could allow multiple JSON messages to be joined together if sent rapidly or delivered together. We appened a newline to all JSON payloads and splitting the buffer on both sides to process json objects one by one.
 * **Input Validation & Verification:** 
   * <span style="color: red;">*Limitation / Solution:*</span> The client automatically caps inputs to 5 alphabetical characters. However, to prevent a bypass of this bu the user, the server validates every guess against the valid words list. So if a client submits a gibberish string, the server responds directly to the client with an `"ERROR"`.
+  
 
 ## **3\. Video Demo**
 
@@ -100,10 +101,11 @@ We designed a custom application-layer protocol for data exchange using JSON ove
 ## **6\. Academic Integrity & References**
 
 * **Code Origin:**  
-  * The socket boilerplate was adapted from the course tutorial "TCP Echo Server". The core multithreaded game logic, protocol, and state management were written by the group.  
+  * The socket boilerplate was adapted from the course tutorial "TCP Echo Server". The core multithreaded game logic, protocol, and state management were written by the group.
+  * client.py side code  started out as the tic tac toe game before being modified.
   * The existing `README.md` template was modified with our projects details instead of writing a `README.md` from scratch
 * **GenAI Usage:**  
-  * AI was used in the creation of the client side code, including the game window and styling. 
+  * Claude was used to generate the client side gui (anything using the tkinter)
   * Claude was used to explain error messages when they occurred during the process of creating the server logic.
   * Claude was used to help explain the server logic and commands, and how to use locks properly in this application.
   * Github Copilot (Gemini) was used to help explaining sections 2 and 5 of the `README.md` succinctly.
